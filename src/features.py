@@ -3,21 +3,11 @@ import librosa
 
 
 def normalize_duration(y, sr, target_duration=2.0):
-    """Normalize audio to a fixed duration by truncating or zero-padding.
-    
-    Args:
-        y: Audio time series
-        sr: Sample rate
-        target_duration: Target duration in seconds (default 2.0)
-    
-    Returns:
-        y_fixed: Audio array of exactly target_duration * sr samples
-    """
     target_length = int(sr * target_duration)
     if len(y) > target_length:
         y = y[:target_length]
     elif len(y) < target_length:
-        y = np.pad(y, (0, target_length - len(y)), mode='constant')
+        y = np.pad(y, (0, target_length - len(y)), mode="constant")
     return y
 
 
@@ -43,17 +33,8 @@ def extract_all_features(y, sr):
     return np.concatenate([chroma, mfcc])
 
 
-def load_audio(path, sr=22050, duration=None, target_duration=2.0):
-    """Load audio and optionally normalize to a fixed duration.
-    
-    Args:
-        path: Path to audio file
-        sr: Target sample rate
-        duration: Max duration to load (librosa parameter, None = full file)
-        target_duration: If set, normalize audio to this duration in seconds.
-                        Set to None to skip normalization.
-    """
-    y, sr = librosa.load(path, sr=sr, duration=duration)
+def load_audio(path, sr=22050, target_duration=2.0):
+    y, sr = librosa.load(path, sr=sr)
     if target_duration is not None:
         y = normalize_duration(y, sr, target_duration=target_duration)
     return y, sr
