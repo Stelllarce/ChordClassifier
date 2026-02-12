@@ -1,6 +1,7 @@
 import numpy as np
 import librosa
 
+"""Functions to work with features. Needed for the application"""
 
 def normalize_duration(y, sr, target_duration=2.0):
     target_length = int(sr * target_duration)

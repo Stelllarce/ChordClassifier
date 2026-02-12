@@ -5,6 +5,7 @@ from src.features import load_audio, extract_all_features, extract_mel_spectrogr
 
 AUDIO_EXTENSIONS = [".wav", ".mp3"]
 
+"""Functions to load audio files, extract features, and prepare datasets for training."""
 
 def load_dataset(data_dirs, sr=22050, target_duration=2.0):
     if isinstance(data_dirs, (str, Path)):

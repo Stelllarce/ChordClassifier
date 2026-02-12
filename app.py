@@ -150,7 +150,7 @@ def show_result(prediction, warning, chroma_mean, y, sr):
 
 
 st.set_page_config(page_title="Chord Classifier", layout="centered")
-
+# Forgot my css so I needed an AI to make this look decent.
 st.markdown(
     """
     <style>
