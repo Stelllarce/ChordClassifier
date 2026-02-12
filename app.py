@@ -30,20 +30,15 @@ DATA_DIRS = [
 NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
 
-def is_chord(y, sr, chroma_threshold=0.45, min_chord_notes=3, rms_threshold=0.005):
+def is_chord(y, sr, rms_threshold=0.005):
     rms = np.sqrt(np.mean(y ** 2))
     chroma = librosa.feature.chroma_stft(y=y, sr=sr)
     chroma_mean = np.mean(chroma, axis=1)
 
     if rms < rms_threshold or np.max(chroma_mean) == 0:
-        return False, "silence", chroma_mean
+        return False, chroma_mean
 
-    chroma_norm = chroma_mean / np.max(chroma_mean)
-    strong_bins = int(np.sum(chroma_norm >= chroma_threshold))
-
-    if strong_bins >= min_chord_notes:
-        return True, "chord", chroma_mean
-    return False, "single_note", chroma_mean
+    return True, chroma_mean
 
 
 def process_audio_bytes(audio_bytes, sr=SR):
@@ -60,13 +55,10 @@ def process_audio_bytes(audio_bytes, sr=SR):
 
 def classify_audio(y, sr, model, config, le):
     y = normalize_duration(y, sr, target_duration=TARGET_DURATION)
-    is_chord_flag, audio_type, chroma_mean = is_chord(y, sr)
-
-    if audio_type == "silence":
-        return None, "No audio detected. Please play a chord.", chroma_mean
+    is_chord_flag, chroma_mean = is_chord(y, sr)
 
     if not is_chord_flag:
-        return None, "Single note detected. Please play a chord.", chroma_mean
+        return None, "No audio detected. Please play a chord.", chroma_mean
 
     if config["feature_type"] == "spectrogram":
         mel = extract_mel_spectrogram(y, sr)
@@ -157,10 +149,7 @@ def load_model():
 
 def show_result(prediction, warning, chroma_mean, y, sr):
     if warning:
-        if "Single note" in warning:
-            st.warning(warning)
-        else:
-            st.info(warning)
+        st.info(warning)
     else:
         label = str(prediction).capitalize()
         if label.lower() == "major":
@@ -213,24 +202,10 @@ tab_mic, tab_file = st.tabs(["Microphone", "Upload file"])
 with tab_mic:
     st.markdown("Record a short clip (about 2 seconds) of a chord on your instrument.")
 
-    try:
-        from audio_recorder_streamlit import audio_recorder
-        audio_bytes = audio_recorder(
-            text="Click to record",
-            recording_color="#e53935",
-            neutral_color="#4fc3f7",
-            icon_size="2x",
-            pause_threshold=3.0,
-            sample_rate=SR,
-        )
-    except ImportError:
-        audio_bytes = None
-        st.error(
-            "Microphone support requires the `audio_recorder_streamlit` package.\n\n"
-            "```\npip install audio-recorder-streamlit\n```"
-        )
+    audio_input = st.audio_input("Record a chord")
 
-    if audio_bytes:
+    if audio_input:
+        audio_bytes = audio_input.read()
         st.audio(audio_bytes, format="audio/wav")
         with st.spinner("Analysing..."):
             y, sr = process_audio_bytes(audio_bytes, SR)
