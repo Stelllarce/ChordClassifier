@@ -1,0 +1,13 @@
+{
+  "model_name": "lr",
+  "model_type": "sklearn",
+  "feature_type": "features",
+  "labels": [
+    "Major",
+    "Minor"
+  ],
+  "window_sec": 2,
+  "overlap": 0.5,
+  "test_f1": 0.6247,
+  "test_acc": 0.6236
+}

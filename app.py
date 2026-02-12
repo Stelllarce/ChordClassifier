@@ -16,8 +16,6 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 from sklearn.preprocessing import LabelEncoder
 from src.features import extract_all_features, extract_mel_spectrogram, normalize_duration, extract_windowed_features
-from src.dataset import load_dataset, split_dataset
-from src.models import get_sklearn_model
 
 SR = 22050
 TARGET_DURATION = 2.0
@@ -103,48 +101,35 @@ def plot_waveform(y, sr):
     return fig
 
 
+def discover_models():
+    available = {}
+    for d in sorted(MODEL_DIR.iterdir()):
+        cfg_path = d / "config.json"
+        if d.is_dir() and cfg_path.exists():
+            with open(cfg_path) as f:
+                available[d.name] = json.load(f)
+    return available
+
+
 @st.cache_resource
-def load_model():
-    config_path = MODEL_DIR / "config.json"
-    le_path = MODEL_DIR / "label_encoder.pkl"
+def load_model(model_key):
+    model_dir = MODEL_DIR / model_key
+    config_path = model_dir / "config.json"
+    le_path = model_dir / "label_encoder.pkl"
 
-    if config_path.exists():
-        with open(config_path) as f:
-            config = json.load(f)
-        le = joblib.load(str(le_path))
-        if config["model_type"] == "keras":
-            model = keras.models.load_model(str(MODEL_DIR / "model.keras"))
-        else:
-            model = joblib.load(str(MODEL_DIR / "model.pkl"))
-        return model, config, le, "loaded"
+    if not config_path.exists():
+        return None, None, None
 
-    for data_dir in DATA_DIRS:
-        if data_dir.exists() and any(data_dir.iterdir()):
-            X, labels = load_dataset(str(data_dir))
-            if len(X) > 0:
-                le = LabelEncoder()
-                y = le.fit_transform(labels)
-                X_train, X_test, y_train, y_test = split_dataset(X, y)
-                model = get_sklearn_model("rf")
-                model.fit(X_train, y_train)
+    with open(config_path) as f:
+        config = json.load(f)
+    le = joblib.load(str(le_path))
 
-                config = {
-                    "model_name": "rf",
-                    "model_type": "sklearn",
-                    "feature_type": "features",
-                    "labels": le.classes_.tolist(),
-                }
+    if config["model_type"] == "keras":
+        model = keras.models.load_model(str(model_dir / "model.keras"))
+    else:
+        model = joblib.load(str(model_dir / "model.pkl"))
 
-                os.makedirs(MODEL_DIR, exist_ok=True)
-                with open(config_path, "w") as f:
-                    json.dump(config, f, indent=2)
-                joblib.dump(le, str(le_path))
-                joblib.dump(model, str(MODEL_DIR / "model.pkl"))
-
-                acc = model.score(X_test, y_test)
-                return model, config, le, f"trained RF with {acc:.0%} accuracy"
-
-    return None, None, None, "error"
+    return model, config, le
 
 
 def show_result(prediction, warning, chroma_mean, y, sr):
@@ -178,14 +163,30 @@ st.markdown(
 
 with st.sidebar:
     st.header("Settings")
-    model, config, le, model_status = load_model()
+    available_models = discover_models()
 
-    if model_status == "error":
-        st.error("No trained model or dataset found.")
-    elif model_status == "loaded":
-        st.success(f"Model loaded: **{config['model_name'].upper()}**")
+    if not available_models:
+        st.error("No trained models found.")
+        model, config, le = None, None, None
     else:
-        st.success(f"Model {model_status}")
+        options = list(available_models.keys())
+        labels = [
+            f"{k.upper()}  (F1: {v.get('test_f1', 'N/A')})"
+            for k, v in available_models.items()
+        ]
+        selected_idx = st.selectbox(
+            "Model",
+            range(len(options)),
+            format_func=lambda i: labels[i],
+        )
+        selected_key = options[selected_idx]
+        model, config, le = load_model(selected_key)
+
+        if model is None:
+            st.error("Failed to load model.")
+        else:
+            f1 = available_models[selected_key].get("test_f1")
+            st.success(f"**{selected_key.upper()}** loaded — F1: {f1}")
 
     st.divider()
     st.caption("Chord Classifier - Major / Minor")
@@ -194,7 +195,7 @@ st.title("Chord Classifier")
 st.caption("Detect whether a chord is **Major** or **Minor** from microphone or a WAV file.")
 
 if model is None:
-    st.error("No model available. Train one first with `python train.py --data_dir data/shords_dataset`.")
+    st.error("No model available.")
     st.stop()
 
 tab_mic, tab_file = st.tabs(["Microphone", "Upload file"])

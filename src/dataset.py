@@ -3,45 +3,53 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split
 from src.features import load_audio, extract_all_features, extract_mel_spectrogram
 
-AUDIO_EXTENSIONS = [".wav", ".mp3", ".flac", ".ogg"]
+AUDIO_EXTENSIONS = [".wav", ".mp3"]
 
 
-def load_dataset(data_dir, sr=22050, target_duration=2.0):
-    data_dir = Path(data_dir)
+def load_dataset(data_dirs, sr=22050, target_duration=2.0):
+    if isinstance(data_dirs, (str, Path)):
+        data_dirs = [data_dirs]
+
     features = []
     labels = []
 
-    for label_dir in sorted(data_dir.iterdir()):
-        if not label_dir.is_dir():
-            continue
-        label = label_dir.name
-        for audio_file in label_dir.iterdir():
-            if audio_file.suffix not in AUDIO_EXTENSIONS:
+    for data_dir in data_dirs:
+        data_dir = Path(data_dir)
+        for label_dir in sorted(data_dir.iterdir()):
+            if not label_dir.is_dir():
                 continue
-            y, sr_loaded = load_audio(str(audio_file), sr=sr, target_duration=target_duration)
-            feat = extract_all_features(y, sr_loaded)
-            features.append(feat)
-            labels.append(label)
+            label = label_dir.name
+            for audio_file in label_dir.iterdir():
+                if audio_file.suffix not in AUDIO_EXTENSIONS:
+                    continue
+                y, sr_loaded = load_audio(str(audio_file), sr=sr, target_duration=target_duration)
+                feat = extract_all_features(y, sr_loaded)
+                features.append(feat)
+                labels.append(label)
 
     return np.array(features), np.array(labels)
 
 
-def load_spectrogram_dataset(data_dir, sr=22050, target_duration=2.0, n_mels=128):
-    data_dir = Path(data_dir)
+def load_spectrogram_dataset(data_dirs, sr=22050, target_duration=2.0, n_mels=128):
+    if isinstance(data_dirs, (str, Path)):
+        data_dirs = [data_dirs]
+
     spectrograms = []
     labels = []
 
-    for label_dir in sorted(data_dir.iterdir()):
-        if not label_dir.is_dir():
-            continue
-        label = label_dir.name
-        for audio_file in label_dir.iterdir():
-            if audio_file.suffix not in AUDIO_EXTENSIONS:
+    for data_dir in data_dirs:
+        data_dir = Path(data_dir)
+        for label_dir in sorted(data_dir.iterdir()):
+            if not label_dir.is_dir():
                 continue
-            y, sr_loaded = load_audio(str(audio_file), sr=sr, target_duration=target_duration)
-            mel = extract_mel_spectrogram(y, sr_loaded, n_mels=n_mels)
-            spectrograms.append(mel)
-            labels.append(label)
+            label = label_dir.name
+            for audio_file in label_dir.iterdir():
+                if audio_file.suffix not in AUDIO_EXTENSIONS:
+                    continue
+                y, sr_loaded = load_audio(str(audio_file), sr=sr, target_duration=target_duration)
+                mel = extract_mel_spectrogram(y, sr_loaded, n_mels=n_mels)
+                spectrograms.append(mel)
+                labels.append(label)
 
     return np.array(spectrograms), np.array(labels)
 

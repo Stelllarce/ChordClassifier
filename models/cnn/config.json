@@ -1,0 +1,13 @@
+{
+  "model_name": "cnn",
+  "model_type": "keras",
+  "feature_type": "spectrogram",
+  "labels": [
+    "Major",
+    "Minor"
+  ],
+  "window_sec": null,
+  "overlap": null,
+  "test_f1": 0.8664,
+  "test_acc": 0.8672
+}
