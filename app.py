@@ -15,7 +15,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from sklearn.preprocessing import LabelEncoder
-from src.features import extract_all_features, extract_mel_spectrogram, normalize_duration
+from src.features import extract_all_features, extract_mel_spectrogram, normalize_duration, extract_windowed_features
 from src.dataset import load_dataset, split_dataset
 from src.models import get_sklearn_model
 
@@ -75,7 +75,10 @@ def classify_audio(y, sr, model, config, le):
         else:
             X = mel.T[np.newaxis, ...]
     else:
-        X = extract_all_features(y, sr).reshape(1, -1)
+        if config.get("window_sec"):
+            X = extract_windowed_features(y, sr, config["window_sec"], config.get("overlap", 0.5)).reshape(1, -1)
+        else:
+            X = extract_all_features(y, sr).reshape(1, -1)
 
     if config["model_type"] == "keras":
         prob = model.predict(X, verbose=0).flatten()[0]

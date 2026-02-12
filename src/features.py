@@ -38,3 +38,22 @@ def load_audio(path, sr=22050, target_duration=2.0):
     if target_duration is not None:
         y = normalize_duration(y, sr, target_duration=target_duration)
     return y, sr
+
+
+def extract_windowed_features(y, sr, window_sec=0.5, overlap=0.5):
+    window_samples = int(window_sec * sr)
+    hop_samples = int(window_samples * (1 - overlap))
+
+    window_feats = []
+    start = 0
+    while start + window_samples <= len(y):
+        segment = y[start:start + window_samples]
+        feat = np.concatenate([extract_chroma(segment, sr), extract_mfcc(segment, sr)])
+        window_feats.append(feat)
+        start += hop_samples
+
+    if not window_feats:
+        window_feats.append(np.concatenate([extract_chroma(y, sr), extract_mfcc(y, sr)]))
+
+    window_feats = np.array(window_feats)
+    return np.concatenate([np.mean(window_feats, axis=0), np.std(window_feats, axis=0)])
