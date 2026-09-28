@@ -1,11 +1,18 @@
-tensorflow
-keras
-scikit-learn
-librosa
-numpy
-matplotlib
-seaborn
-joblib
-streamlit
-audio-recorder-streamlit
-soundfile
+# Local app + shared library. Versions are lower bounds (Colab ships its own
+# TensorFlow/NumPy; hard pins would fight the preinstalled ones during training).
+librosa>=0.11.0
+scikit-learn>=1.8.0
+numpy>=1.26
+pandas>=2.0
+matplotlib>=3.8
+seaborn>=0.13
+joblib>=1.3
+soundfile>=0.12
+streamlit>=1.50
+
+# Deep-learning models (training is done in Colab, but keep these for local loading)
+tensorflow>=2.16
+keras>=3.0
+
+# Only needed by the training notebook to pull the Kaggle datasets
+kagglehub>=0.3

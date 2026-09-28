@@ -1,13 +1,13 @@
 {
   "model_name": "lr",
   "model_type": "sklearn",
-  "feature_type": "features",
+  "feature_type": "chroma_vector",
   "labels": [
     "Major",
     "Minor"
   ],
-  "window_sec": 2,
-  "overlap": 0.5,
-  "test_f1": 0.6247,
-  "test_acc": 0.6236
+  "augment": false,
+  "cv_f1": 0.5189,
+  "test_f1": 0.5197,
+  "test_acc": 0.5201
 }

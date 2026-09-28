@@ -1,13 +1,13 @@
 {
   "model_name": "mlp",
   "model_type": "keras",
-  "feature_type": "features",
+  "feature_type": "chroma_vector",
   "labels": [
     "Major",
     "Minor"
   ],
-  "window_sec": 2,
-  "overlap": 0.5,
-  "test_f1": 0.6335,
-  "test_acc": 0.6494
+  "augment": true,
+  "cv_f1": null,
+  "test_f1": 0.8755,
+  "test_acc": 0.8755
 }

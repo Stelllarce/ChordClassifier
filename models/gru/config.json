@@ -1,0 +1,13 @@
+{
+  "model_name": "gru",
+  "model_type": "keras",
+  "feature_type": "chromagram",
+  "labels": [
+    "Major",
+    "Minor"
+  ],
+  "augment": true,
+  "cv_f1": null,
+  "test_f1": 0.967,
+  "test_acc": 0.967
+}

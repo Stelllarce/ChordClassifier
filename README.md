@@ -1,41 +1,61 @@
 # ChordClassifier
 
-Classifies major and minor musical chords from audio files using machine learning.
+Classifies a musical chord as **major** or **minor** from a short audio clip, and
+serves the prediction through a Streamlit app.
 
-## Overview
+## How it works
 
-Audio files are processed to extract chroma and MFCC features using `librosa`. Several classifiers (Random Forest, SVM, KNN, Logistic Regression) are trained and evaluated on these features.
+Audio is resampled to 22050 Hz, trimmed/padded to 2 seconds, and turned into
+**chroma features** (energy per pitch class C..B) using the Constant-Q Transform.
+Major vs. minor is decided by one interval — the third — which is exactly what
+chroma captures. Two feature representations are used:
 
-## Project Structure
+- **chroma vector** — mean + std of chroma over time (24 numbers); used by the
+  classical models and the MLP.
+- **chromagram** — the full 12 × 87 pitch-class-over-time image; used by the CNN
+  and the recurrent (LSTM/GRU) models.
+
+**Pitch-rotation augmentation** is the key trick: a chord shifted to another key
+is still major/minor, so rolling the pitch axis creates 11 extra copies per clip.
+This makes the models ignore the root note and roughly multiplies the data ×12.
+
+## Project layout
 
 ```
-├── data/                  # Audio files organized by chord class (e.g., data/Am/, data/C/)
-├── notebooks/
-│   ├── 01_eda.ipynb       # Exploratory data analysis
-│   ├── 02_feature_analysis.ipynb  # Feature inspection
-│   └── 03_training.ipynb  # Model training and evaluation
-├── src/
-│   ├── features.py        # Audio feature extraction
-│   ├── dataset.py         # Data loading and splitting
-│   ├── models.py          # Model definitions
-│   └── utils.py           # Plotting and metrics helpers
-├── train.py               # Standalone training script
-└── requirements.txt
+src/
+  config.py       constants + the model-config schema (single source of truth)
+  features.py     audio -> chroma features, augmentation, silence/tuning checks
+  dataset.py      walk data/<label>/ folders into feature arrays
+  models.py       sklearn factory + Keras builders (mlp/cnn/lstm/gru)
+  persistence.py  save/load models + config; discover trained models
+  utils.py        plotting helpers for the notebooks
+app.py            Streamlit app (microphone or file upload -> prediction)
+models/<name>/    a trained model: config.json + label_encoder.pkl + model.*
+notebooks/        EDA + the Colab training notebook
+docs/report.md    plain-language changelog of what changed and why
 ```
 
-## Setup
+## Run the app (local)
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
+streamlit run app.py
 ```
 
-## Usage
+The app auto-discovers every trained model under `models/`.
 
-Place audio files in `data/` with one subdirectory per chord class, then:
+## Training
 
-**Notebooks:** Run notebooks in order (01 → 02 → 03) for analysis and interactive training.
+Training is done in **Google Colab** (free GPU) via
+`notebooks/model_training.ipynb`. It downloads the datasets with `kagglehub`,
+trains the whole model zoo using the shared code in `src/`, and writes each model
+back into `models/<name>/`. See `docs/report.md` for a step-by-step, non-technical
+walkthrough.
 
-**Script:** `python train.py --data_dir data/ --model rf`
+## Datasets
 
+- [major-vs-minor-guitar-chords](https://www.kaggle.com/datasets/mehanat96/major-vs-minor-guitar-chords)
+- [musical-instrument-chord-classification](https://www.kaggle.com/datasets/deepcontractor/musical-instrument-chord-classification)
+
+`data/` is git-ignored; the notebook downloads it on demand.

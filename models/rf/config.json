@@ -1,13 +1,13 @@
 {
   "model_name": "rf",
   "model_type": "sklearn",
-  "feature_type": "features",
+  "feature_type": "chroma_vector",
   "labels": [
     "Major",
     "Minor"
   ],
-  "window_sec": 2,
-  "overlap": 0.5,
-  "test_f1": 0.8055,
-  "test_acc": 0.8081
+  "augment": true,
+  "cv_f1": 0.9058,
+  "test_f1": 0.9302,
+  "test_acc": 0.9304
 }

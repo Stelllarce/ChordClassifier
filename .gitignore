@@ -209,7 +209,3 @@ __marimo__/
 # Project data
 data/*
 !data/.gitkeep
-
-# Trained models
-*.pkl
-confusion_matrix.png
